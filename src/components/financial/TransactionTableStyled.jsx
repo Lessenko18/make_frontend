@@ -11,6 +11,13 @@ export const TableWrapper = styled.section`
   @media (max-width: 860px) {
     overflow-x: auto;
   }
+
+  @media (max-width: 720px) {
+    overflow: visible;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
 `;
 
 export const EmptyWrapper = styled(TableWrapper)`
@@ -30,6 +37,10 @@ export const Table = styled.table`
 
   @media (max-width: 860px) {
     min-width: 760px;
+  }
+
+  @media (max-width: 720px) {
+    display: none;
   }
 `;
 
@@ -61,6 +72,73 @@ export const Actions = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+`;
+
+export const MobileList = styled.div`
+  display: none;
+
+  @media (max-width: 720px) {
+    display: grid;
+    gap: 12px;
+  }
+`;
+
+export const MobileCard = styled.article`
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-soft);
+  background: var(--surface-100);
+  box-shadow: var(--shadow-card);
+  padding: 16px;
+`;
+
+export const MobileHeader = styled.div`
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+`;
+
+export const MobileTitle = styled.h3`
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-main);
+`;
+
+export const MobileDate = styled.p`
+  margin: 4px 0 0;
+  color: var(--text-soft);
+  font-size: 0.88rem;
+`;
+
+export const MobileMeta = styled.div`
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+`;
+
+export const MobileRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+`;
+
+export const MobileLabel = styled.span`
+  color: var(--text-soft);
+  font-size: 0.84rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+`;
+
+export const MobileValue = styled.span`
+  font-weight: 700;
+  color: var(--text-main);
+  text-align: right;
+`;
+
+export const MobileActions = styled(Actions)`
+  margin-top: 14px;
+  justify-content: flex-end;
 `;
 
 export const IconButton = styled.button`

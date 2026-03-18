@@ -4,6 +4,16 @@ import {
   EmptyText,
   EmptyWrapper,
   IconButton,
+  MobileActions,
+  MobileCard,
+  MobileDate,
+  MobileHeader,
+  MobileLabel,
+  MobileList,
+  MobileMeta,
+  MobileRow,
+  MobileTitle,
+  MobileValue,
   Table,
   TableWrapper,
   Tag,
@@ -11,7 +21,7 @@ import {
   Th,
 } from "./TransactionTableStyled";
 
-function TransactionTable({ rows }) {
+function TransactionTable({ rows, showActions = false }) {
   if (!rows.length) {
     return (
       <EmptyWrapper aria-label="Lancamentos do fluxo de caixa">
@@ -30,7 +40,7 @@ function TransactionTable({ rows }) {
             <Th>Categoria</Th>
             <Th>Valor</Th>
             <Th>Tipo</Th>
-            <Th>Acoes</Th>
+            {showActions ? <Th>Acoes</Th> : null}
           </tr>
         </thead>
 
@@ -46,23 +56,66 @@ function TransactionTable({ rows }) {
                   {row.type}
                 </Tag>
               </Td>
-              <Td>
-                <Actions>
-                  <IconButton type="button" aria-label="Editar categoria">
-                    <SquarePen size={18} />
-                  </IconButton>
-                  <IconButton type="button" aria-label="Editar lancamento">
-                    <Pencil size={18} />
-                  </IconButton>
-                  <IconButton type="button" aria-label="Excluir lancamento">
-                    <Trash2 size={18} />
-                  </IconButton>
-                </Actions>
-              </Td>
+              {showActions ? (
+                <Td>
+                  <Actions>
+                    <IconButton type="button" aria-label="Editar categoria">
+                      <SquarePen size={18} />
+                    </IconButton>
+                    <IconButton type="button" aria-label="Editar lancamento">
+                      <Pencil size={18} />
+                    </IconButton>
+                    <IconButton type="button" aria-label="Excluir lancamento">
+                      <Trash2 size={18} />
+                    </IconButton>
+                  </Actions>
+                </Td>
+              ) : null}
             </tr>
           ))}
         </tbody>
       </Table>
+
+      <MobileList>
+        {rows.map((row) => (
+          <MobileCard key={`${row.date}-${row.description}`}>
+            <MobileHeader>
+              <div>
+                <MobileTitle>{row.description}</MobileTitle>
+                <MobileDate>{row.date}</MobileDate>
+              </div>
+              <Tag $income={row.type.toLowerCase() === "entrada"}>
+                {row.type}
+              </Tag>
+            </MobileHeader>
+
+            <MobileMeta>
+              <MobileRow>
+                <MobileLabel>Categoria</MobileLabel>
+                <MobileValue>{row.category}</MobileValue>
+              </MobileRow>
+              <MobileRow>
+                <MobileLabel>Valor</MobileLabel>
+                <MobileValue>{row.amount}</MobileValue>
+              </MobileRow>
+            </MobileMeta>
+
+            {showActions ? (
+              <MobileActions>
+                <IconButton type="button" aria-label="Editar categoria">
+                  <SquarePen size={18} />
+                </IconButton>
+                <IconButton type="button" aria-label="Editar lancamento">
+                  <Pencil size={18} />
+                </IconButton>
+                <IconButton type="button" aria-label="Excluir lancamento">
+                  <Trash2 size={18} />
+                </IconButton>
+              </MobileActions>
+            ) : null}
+          </MobileCard>
+        ))}
+      </MobileList>
     </TableWrapper>
   );
 }

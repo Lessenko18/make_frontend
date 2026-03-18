@@ -17,7 +17,7 @@ const sections = [
     to: "/financeiro/fluxo-de-caixa",
     icon: DollarSign,
   },
-  { key: "estoque", label: "Estoque", to: "/estoque", icon: Package },
+  { key: "servicos", label: "Serviços", to: "/servicos", icon: Package },
 ];
 
 function Sidebar({ activeSection }) {

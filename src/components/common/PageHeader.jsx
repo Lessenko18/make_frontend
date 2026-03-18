@@ -6,7 +6,7 @@ import {
   Title,
 } from "./PageHeaderStyled";
 
-function PageHeader({ breadcrumb, title, actionLabel, actionIcon }) {
+function PageHeader({ breadcrumb, title, actionLabel, actionIcon, onAction }) {
   return (
     <Header>
       <HeaderInfo>
@@ -14,7 +14,7 @@ function PageHeader({ breadcrumb, title, actionLabel, actionIcon }) {
         <Title>{title}</Title>
       </HeaderInfo>
 
-      <ActionButton type="button">
+      <ActionButton type="button" onClick={onAction}>
         {actionIcon}
         <span>{actionLabel}</span>
       </ActionButton>

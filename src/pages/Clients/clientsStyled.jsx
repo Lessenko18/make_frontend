@@ -114,11 +114,21 @@ export const TableCard = styled.div`
   border: 1px solid ${roseBorder};
   box-shadow: 0 8px 24px rgb(192 85 110 / 0.06);
   overflow: hidden;
+
+  @media (max-width: 720px) {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
 `;
 
 export const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
+
+  @media (max-width: 720px) {
+    display: none;
+  }
 `;
 
 export const Th = styled.th`
@@ -189,6 +199,51 @@ export const DetailPanel = styled.aside`
   flex-direction: column;
   align-items: center;
   gap: 14px;
+
+  @media (max-width: 720px) {
+    padding: 18px 16px;
+  }
+`;
+
+export const MobileClientList = styled.div`
+  display: none;
+
+  @media (max-width: 720px) {
+    display: grid;
+    gap: 12px;
+  }
+`;
+
+export const MobileClientCard = styled.article`
+  border-radius: var(--radius-lg);
+  border: 1px solid ${roseBorder};
+  background: var(--surface-100);
+  box-shadow: 0 8px 24px rgb(192 85 110 / 0.08);
+  padding: 16px;
+`;
+
+export const MobileClientHeader = styled.div`
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+`;
+
+export const MobileClientName = styled.h3`
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-main);
+`;
+
+export const MobileClientMeta = styled.p`
+  margin: 6px 0 0;
+  color: var(--text-soft);
+  font-size: 0.92rem;
+`;
+
+export const MobileClientActions = styled(ActionCell)`
+  margin-top: 14px;
+  justify-content: flex-end;
 `;
 
 export const Avatar = styled.img`
@@ -236,11 +291,33 @@ export const DetailText = styled.p`
   line-height: 1.55;
 `;
 
+export const HistoryList = styled.ul`
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+`;
+
+export const HistoryItem = styled.li`
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  line-height: 1.5;
+
+  strong {
+    color: var(--text-main);
+    font-weight: 700;
+  }
+`;
+
 export const PhotoGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   width: 100%;
+
+  @media (max-width: 420px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
 `;
 
 export const PhotoThumb = styled.img`
@@ -405,6 +482,11 @@ export const LightboxClose = styled.button`
   &:hover {
     background: rgba(255, 255, 255, 0.28);
   }
+
+  @media (max-width: 640px) {
+    top: 12px;
+    right: 12px;
+  }
 `;
 
 export const LightboxNavBtn = styled.button`
@@ -431,5 +513,11 @@ export const LightboxNavBtn = styled.button`
   &:disabled {
     opacity: 0.25;
     cursor: default;
+  }
+
+  @media (max-width: 640px) {
+    width: 40px;
+    height: 40px;
+    ${({ $side }) => ($side === "left" ? "left: 10px;" : "right: 10px;")}
   }
 `;

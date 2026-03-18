@@ -38,9 +38,16 @@ const GlobalStyled = createGlobalStyle`
     min-height: 100%;
   }
 
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     font-family: var(--font-body);
     color: var(--text-main);
+    line-height: 1.5;
+    overflow-x: hidden;
     background:
       linear-gradient(180deg, rgb(250 245 252 / 0.9), rgb(255 255 255 / 0.96)),
       repeating-linear-gradient(
@@ -57,13 +64,29 @@ const GlobalStyled = createGlobalStyle`
       );
   }
 
+  img {
+    display: block;
+    max-width: 100%;
+  }
+
   a {
     color: inherit;
     text-decoration: none;
   }
 
-  button {
+  button,
+  input,
+  textarea,
+  select {
     font: inherit;
+  }
+
+  @media (max-width: 640px) {
+    body {
+      background:
+        linear-gradient(180deg, rgb(251 247 253 / 0.98), rgb(255 255 255 / 1)),
+        radial-gradient(circle at top right, rgb(114 65 138 / 0.08), transparent 42%);
+    }
   }
 `;
 

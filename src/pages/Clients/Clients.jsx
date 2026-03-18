@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Camera,
   ChevronLeft,
@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import AppShell from "../../components/layout/AppShell";
+import ConfirmDialog from "../../components/common/ConfirmDialog";
 import NewClientModal from "./NewClientModal";
 import EditClientModal from "./EditClientModal";
 import {
@@ -31,11 +32,19 @@ import {
   EmptyPanel,
   EmptyRow,
   GalleryHeader,
+  HistoryItem,
+  HistoryList,
   IconBtn,
   LightboxClose,
   LightboxImg,
   LightboxNavBtn,
   LightboxOverlay,
+  MobileClientActions,
+  MobileClientCard,
+  MobileClientHeader,
+  MobileClientList,
+  MobileClientMeta,
+  MobileClientName,
   NewClientButton,
   PageTitle,
   PageTop,
@@ -60,6 +69,34 @@ import {
   uploadGalleryPhotos,
   uploadProfilePhoto,
 } from "../../services/clientsService";
+import {
+  getClientHistory,
+  listAppointments,
+} from "../../services/appointmentsService";
+
+const normalizeStatus = (status) => {
+  const value = String(status || "agendado")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (value === "pago") return "pago";
+  if (value === "concluido") return "concluido";
+  return "agendado";
+};
+
+const formatProcedureLabel = (appointment) => {
+  const serviceName =
+    appointment?.service?.name ||
+    appointment?.category?.name ||
+    appointment?.serviceName ||
+    "Serviço";
+  const date = appointment?.scheduledAt
+    ? new Date(appointment.scheduledAt).toLocaleDateString("pt-BR")
+    : "Sem data";
+  return `${serviceName} - ${date}`;
+};
 
 function Clients() {
   const [clients, setClients] = useState([]);
@@ -69,6 +106,9 @@ function Clients() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editClient, setEditClient] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [appointments, setAppointments] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const [lightboxIndex, setLightboxIndex] = useState(null);
 
@@ -92,10 +132,16 @@ function Clients() {
   const fetchClients = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await listClients();
-      setClients(data);
+      const [clientsData, appointmentsData] = await Promise.all([
+        listClients(),
+        listAppointments(),
+      ]);
+
+      setClients(clientsData);
+      setAppointments(appointmentsData);
     } catch {
       setClients([]);
+      setAppointments([]);
     } finally {
       setLoading(false);
     }
@@ -105,13 +151,69 @@ function Clients() {
     fetchClients();
   }, [fetchClients]);
 
+  const proceduresByClient = useMemo(() => {
+    const now = Date.now();
+    const map = new Map();
+
+    appointments.forEach((appointment) => {
+      const clientId = appointment?.client?._id || appointment?.client;
+      if (!clientId) return;
+
+      const when = new Date(appointment.scheduledAt).getTime();
+      if (!Number.isFinite(when)) return;
+
+      const status = normalizeStatus(appointment.status);
+      const current = map.get(clientId) || {
+        lastProcedure: null,
+        nextProcedure: null,
+      };
+
+      if (
+        (status === "concluido" || status === "pago") &&
+        when <= now &&
+        (!current.lastProcedure ||
+          new Date(current.lastProcedure.scheduledAt).getTime() < when)
+      ) {
+        current.lastProcedure = appointment;
+      }
+
+      if (
+        status !== "pago" &&
+        when >= now &&
+        (!current.nextProcedure ||
+          new Date(current.nextProcedure.scheduledAt).getTime() > when)
+      ) {
+        current.nextProcedure = appointment;
+      }
+
+      map.set(clientId, current);
+    });
+
+    return map;
+  }, [appointments]);
+
   async function handleSelectClient(client) {
     setSelected(client._id);
+    setHistoryLoading(true);
+
     try {
-      const data = await getClient(client._id);
-      setDetail(data);
+      const [clientData, historyData] = await Promise.all([
+        getClient(client._id),
+        getClientHistory(client._id),
+      ]);
+
+      const history = Array.isArray(historyData)
+        ? historyData
+        : historyData?.appointments || historyData?.history || [];
+
+      setDetail({
+        ...clientData,
+        history,
+      });
     } catch {
       setDetail(client);
+    } finally {
+      setHistoryLoading(false);
     }
   }
 
@@ -119,16 +221,54 @@ function Clients() {
     c.name?.toLowerCase().includes(search.toLowerCase()),
   );
 
-  async function handleDelete(e, id) {
-    e.stopPropagation();
-    if (!window.confirm("Excluir esta cliente?")) return;
+  function renderClientActions(client) {
+    return (
+      <>
+        <IconBtn
+          type="button"
+          aria-label="Ver detalhes"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleSelectClient(client);
+          }}
+        >
+          <Eye size={18} />
+        </IconBtn>
+        <IconBtn
+          type="button"
+          aria-label="Editar cliente"
+          onClick={(e) => {
+            e.stopPropagation();
+            setEditClient(client);
+          }}
+        >
+          <Pencil size={18} />
+        </IconBtn>
+        <IconBtn
+          type="button"
+          aria-label="Excluir cliente"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDeleteConfirm({ id: client._id, name: client.name });
+          }}
+        >
+          <Trash2 size={18} />
+        </IconBtn>
+      </>
+    );
+  }
+
+  async function handleDelete() {
+    if (!deleteConfirm?.id) return;
+
     try {
-      await deleteClient(id);
-      if (selected === id) {
+      await deleteClient(deleteConfirm.id);
+      if (selected === deleteConfirm.id) {
         setSelected(null);
         setDetail(null);
       }
-      fetchClients();
+      setDeleteConfirm(null);
+      await fetchClients();
     } catch {
       alert("Erro ao excluir. Tente novamente.");
     }
@@ -199,6 +339,7 @@ function Clients() {
                   <Th>Nome</Th>
                   <Th>WhatsApp</Th>
                   <Th>Último Serviço</Th>
+                  <Th>Próximo Serviço</Th>
                   <Th>Ações</Th>
                 </tr>
               </thead>
@@ -221,42 +362,85 @@ function Clients() {
                   >
                     <Td>{client.name}</Td>
                     <Td>{client.phone}</Td>
-                    <Td>—</Td>
                     <Td>
-                      <ActionCell>
-                        <IconBtn
-                          type="button"
-                          aria-label="Ver detalhes"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectClient(client);
-                          }}
-                        >
-                          <Eye size={18} />
-                        </IconBtn>
-                        <IconBtn
-                          type="button"
-                          aria-label="Editar cliente"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditClient(client);
-                          }}
-                        >
-                          <Pencil size={18} />
-                        </IconBtn>
-                        <IconBtn
-                          type="button"
-                          aria-label="Excluir cliente"
-                          onClick={(e) => handleDelete(e, client._id)}
-                        >
-                          <Trash2 size={18} />
-                        </IconBtn>
-                      </ActionCell>
+                      {proceduresByClient.get(client._id)?.lastProcedure
+                        ? formatProcedureLabel(
+                            proceduresByClient.get(client._id).lastProcedure,
+                          )
+                        : "—"}
+                    </Td>
+                    <Td>
+                      {proceduresByClient.get(client._id)?.nextProcedure
+                        ? formatProcedureLabel(
+                            proceduresByClient.get(client._id).nextProcedure,
+                          )
+                        : "—"}
+                    </Td>
+                    <Td>
+                      <ActionCell>{renderClientActions(client)}</ActionCell>
                     </Td>
                   </Tr>
                 ))}
               </tbody>
             </Table>
+
+            <MobileClientList>
+              {loading && (
+                <MobileClientCard>
+                  <MobileClientName>Carregando...</MobileClientName>
+                </MobileClientCard>
+              )}
+
+              {!loading && !filtered.length && (
+                <MobileClientCard>
+                  <MobileClientName>
+                    Nenhuma cliente encontrada.
+                  </MobileClientName>
+                </MobileClientCard>
+              )}
+
+              {!loading &&
+                filtered.map((client) => (
+                  <MobileClientCard
+                    key={client._id}
+                    onClick={() => handleSelectClient(client)}
+                  >
+                    <MobileClientHeader>
+                      <div>
+                        <MobileClientName>{client.name}</MobileClientName>
+                        <MobileClientMeta>
+                          {client.phone || "Sem WhatsApp"}
+                        </MobileClientMeta>
+                        <MobileClientMeta>
+                          Último:{" "}
+                          {proceduresByClient.get(client._id)?.lastProcedure
+                            ? formatProcedureLabel(
+                                proceduresByClient.get(client._id)
+                                  .lastProcedure,
+                              )
+                            : "—"}
+                        </MobileClientMeta>
+                        <MobileClientMeta>
+                          Próximo:{" "}
+                          {proceduresByClient.get(client._id)?.nextProcedure
+                            ? formatProcedureLabel(
+                                proceduresByClient.get(client._id)
+                                  .nextProcedure,
+                              )
+                            : "—"}
+                        </MobileClientMeta>
+                      </div>
+                      {selected === client._id ? (
+                        <span>Selecionada</span>
+                      ) : null}
+                    </MobileClientHeader>
+
+                    <MobileClientActions>
+                      {renderClientActions(client)}
+                    </MobileClientActions>
+                  </MobileClientCard>
+                ))}
+            </MobileClientList>
           </TableCard>
 
           <DetailPanel>
@@ -309,7 +493,9 @@ function Clients() {
                   <DetailSection>
                     <DetailLabel>Último serviço:</DetailLabel>
                     <DetailText>
-                      {detail.procedures.lastProcedure.category?.name} —{" "}
+                      {detail.procedures.lastProcedure.service?.name ||
+                        detail.procedures.lastProcedure.category?.name}{" "}
+                      -{" "}
                       {new Date(
                         detail.procedures.lastProcedure.scheduledAt,
                       ).toLocaleDateString("pt-BR")}
@@ -321,13 +507,48 @@ function Clients() {
                   <DetailSection>
                     <DetailLabel>Próximo serviço:</DetailLabel>
                     <DetailText>
-                      {detail.procedures.nextProcedure.category?.name} —{" "}
+                      {detail.procedures.nextProcedure.service?.name ||
+                        detail.procedures.nextProcedure.category?.name}{" "}
+                      -{" "}
                       {new Date(
                         detail.procedures.nextProcedure.scheduledAt,
                       ).toLocaleDateString("pt-BR")}
                     </DetailText>
                   </DetailSection>
                 )}
+
+                <DetailSection>
+                  <DetailLabel>Histórico de serviços:</DetailLabel>
+                  {historyLoading ? (
+                    <DetailText>Carregando histórico...</DetailText>
+                  ) : detail.history?.length ? (
+                    <HistoryList>
+                      {detail.history.map((item) => (
+                        <HistoryItem
+                          key={
+                            item._id ||
+                            `${item.scheduledAt}-${item.service?._id || item.category?._id || item.serviceName}`
+                          }
+                        >
+                          <strong>
+                            {item.service?.name ||
+                              item.category?.name ||
+                              item.serviceName ||
+                              "Serviço"}
+                          </strong>{" "}
+                          -{" "}
+                          {item.scheduledAt
+                            ? new Date(item.scheduledAt).toLocaleDateString(
+                                "pt-BR",
+                              )
+                            : "Sem data"}
+                        </HistoryItem>
+                      ))}
+                    </HistoryList>
+                  ) : (
+                    <DetailText>Nenhum serviço no histórico.</DetailText>
+                  )}
+                </DetailSection>
 
                 <DetailSection>
                   <GalleryHeader>
@@ -443,6 +664,15 @@ function Clients() {
             )}
           </LightboxOverlay>
         )}
+
+        <ConfirmDialog
+          open={Boolean(deleteConfirm)}
+          title="Excluir cliente"
+          message={`Tem certeza que deseja excluir ${deleteConfirm?.name || "esta cliente"}? Esta ação não pode ser desfeita.`}
+          confirmLabel="Excluir cliente"
+          onCancel={() => setDeleteConfirm(null)}
+          onConfirm={handleDelete}
+        />
       </ClientsPage>
     </AppShell>
   );
