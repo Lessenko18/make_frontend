@@ -1,4 +1,11 @@
-import { Calendar, DollarSign, Home, Package, Users } from "lucide-react";
+import {
+  Calendar,
+  DollarSign,
+  Home,
+  Package,
+  UserCog,
+  Users,
+} from "lucide-react";
 import {
   Brand,
   BrandMark,
@@ -10,11 +17,12 @@ import {
 const sections = [
   { key: "dashboard", label: "Dashboard", to: "/dashboard", icon: Home },
   { key: "clientes", label: "Clientes", to: "/clientes", icon: Users },
+  { key: "usuarios", label: "Usuários", to: "/usuarios", icon: UserCog },
   { key: "agenda", label: "Agenda", to: "/agenda", icon: Calendar },
   {
     key: "financeiro",
     label: "Financeiro",
-    to: "/financeiro/fluxo-de-caixa",
+    to: "/financeiro",
     icon: DollarSign,
   },
   { key: "servicos", label: "Serviços", to: "/servicos", icon: Package },

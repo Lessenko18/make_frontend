@@ -1,8 +1,6 @@
 import { createGlobalStyle } from "styled-components";
 
 const GlobalStyled = createGlobalStyle`
-  @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap");
-
   :root {
     --font-body: "Manrope", "Segoe UI", sans-serif;
     --font-heading: "Playfair Display", Georgia, serif;
