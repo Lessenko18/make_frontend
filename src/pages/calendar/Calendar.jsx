@@ -41,22 +41,34 @@ import {
   CalendarContainer,
 } from "./calendarStyled";
 
-const normalizeStatus = (status) => {
-  const value = String(status || "agendado")
+const normalizeText = (value) =>
+  String(value || "")
     .trim()
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-  if (value === "pago") return "pago";
-  if (value === "concluido") return "concluido";
+const serviceColorByName = {
+  "maquiagem express": "lilas",
+  "maquiagem noiva": "dourado",
+  "maquiagem social": "rosinha",
+  "previa de maquiagem noiva": "dourado",
+};
+
+const getServiceColorClass = (serviceName) =>
+  `event-service-${serviceColorByName[normalizeText(serviceName)] || "lilas"}`;
+
+const normalizeStatus = (status) => {
+  const value = normalizeText(status || "agendado");
+  if (value === "pago" || value === "concluido" || value === "encerrado") {
+    return "encerrado";
+  }
   return "agendado";
 };
 
 const statusLabel = {
   agendado: "Em aberto",
-  concluido: "Concluído",
-  pago: "Pago",
+  encerrado: "Encerrado",
 };
 
 function Calendar({ title }) {
@@ -174,12 +186,14 @@ function Calendar({ title }) {
       const value = Number(
         item.price ?? item.service?.valor ?? item.category?.valor ?? 0,
       );
+      const eventServiceClass = getServiceColorClass(serviceName);
+      const isClosed = status === "encerrado";
 
       return {
         id: item._id,
         start: item.scheduledAt,
-        title: `${clientName} - ${serviceName}`,
-        classNames: [`event-status-${status}`],
+        title: `${isClosed ? "✓ " : ""}${clientName} - ${serviceName}`,
+        classNames: [eventServiceClass, isClosed ? "event-is-encerrado" : ""],
         extendedProps: {
           raw: item,
           status,
@@ -307,8 +321,8 @@ function Calendar({ title }) {
     if (!activeAppointment?._id) return;
 
     const currentStatus = normalizeStatus(activeAppointment.status);
-    if (currentStatus === "pago") {
-      setError("Este atendimento já foi pago e está encerrado.");
+    if (currentStatus === "encerrado") {
+      setError("Este atendimento já está encerrado.");
       return;
     }
 
@@ -316,24 +330,32 @@ function Calendar({ title }) {
       setSaving(true);
       setError("");
 
-      const payload = {
-        status,
+      const basePayload = {
         notes: form.notes.trim() || undefined,
+        paymentMethod: form.paymentMethod,
       };
 
-      if (status === "pago") {
-        payload.paymentMethod = form.paymentMethod;
+      try {
+        await updateAppointment(activeAppointment._id, {
+          ...basePayload,
+          status,
+        });
+      } catch (statusError) {
+        if (status === "encerrado") {
+          await updateAppointment(activeAppointment._id, {
+            ...basePayload,
+            status: "pago",
+          });
+        } else {
+          throw statusError;
+        }
       }
-
-      await updateAppointment(activeAppointment._id, payload);
 
       closeModal();
       await loadInitialData();
       showSuccessToast(
         "Atendimento atualizado",
-        status === "pago"
-          ? "O atendimento foi marcado como pago."
-          : "O atendimento foi marcado como concluído.",
+        "O atendimento foi encerrado.",
       );
     } catch (err) {
       setError(
@@ -384,8 +406,8 @@ function Calendar({ title }) {
         {isAgendaPage ? (
           <CalendarCard>
             <CalendarMeta>
-              Clique em um dia para agendar ou em um evento para finalizar como
-              concluído/pago.
+              Clique em um dia para agendar ou em um evento para marcar como
+              encerrado.
             </CalendarMeta>
 
             <CalendarContainer>
@@ -602,7 +624,7 @@ function Calendar({ title }) {
 
               {(() => {
                 const activeStatus = normalizeStatus(activeAppointment.status);
-                const isPaid = activeStatus === "pago";
+                const isClosed = activeStatus === "encerrado";
 
                 return (
                   <Form onSubmit={(e) => e.preventDefault()}>
@@ -639,7 +661,7 @@ function Calendar({ title }) {
                             paymentMethod: e.target.value,
                           }))
                         }
-                        disabled={isPaid}
+                        disabled={isClosed}
                       >
                         <option value="pix">Pix</option>
                         <option value="dinheiro">Dinheiro</option>
@@ -662,21 +684,20 @@ function Calendar({ title }) {
                             notes: e.target.value,
                           }))
                         }
-                        disabled={isPaid}
+                        disabled={isClosed}
                       />
                     </Field>
 
-                    {isPaid ? (
+                    {isClosed ? (
                       <CalendarMeta>
-                        Atendimento encerrado. Após pago, não é possível alterar
-                        o status.
+                        Atendimento encerrado. Não é possível alterar o status.
                       </CalendarMeta>
                     ) : null}
 
                     {error ? <ErrorText>{error}</ErrorText> : null}
 
                     <ModalActions>
-                      {!isPaid ? (
+                      {!isClosed ? (
                         <DangerButton
                           type="button"
                           onClick={requestDelete}
@@ -688,22 +709,13 @@ function Calendar({ title }) {
                       <GhostButton type="button" onClick={closeModal}>
                         Fechar
                       </GhostButton>
-                      {!isPaid ? (
+                      {!isClosed ? (
                         <PrimaryButton
                           type="button"
-                          onClick={() => handleFinalize("concluido")}
+                          onClick={() => handleFinalize("encerrado")}
                           disabled={saving}
                         >
-                          {saving ? "Processando..." : "Marcar Concluído"}
-                        </PrimaryButton>
-                      ) : null}
-                      {!isPaid ? (
-                        <PrimaryButton
-                          type="button"
-                          onClick={() => handleFinalize("pago")}
-                          disabled={saving}
-                        >
-                          {saving ? "Processando..." : "Marcar Pago"}
+                          {saving ? "Processando..." : "Marcar Encerrado"}
                         </PrimaryButton>
                       ) : null}
                     </ModalActions>

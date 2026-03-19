@@ -2,14 +2,18 @@ import {
   Calendar,
   DollarSign,
   Home,
+  LogOut,
   Package,
   UserCog,
   Users,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { clearAuthToken } from "../../services/authService";
 import {
   Brand,
   BrandMark,
   Nav,
+  LogoutButton,
   SidebarContainer,
   SidebarItem,
 } from "./SidebarStyled";
@@ -29,6 +33,13 @@ const sections = [
 ];
 
 function Sidebar({ activeSection }) {
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    clearAuthToken();
+    navigate("/login", { replace: true });
+  }
+
   return (
     <SidebarContainer>
       <Brand>
@@ -54,6 +65,11 @@ function Sidebar({ activeSection }) {
           );
         })}
       </Nav>
+
+      <LogoutButton type="button" onClick={handleLogout}>
+        <LogOut size={20} />
+        <span>Sair</span>
+      </LogoutButton>
     </SidebarContainer>
   );
 }

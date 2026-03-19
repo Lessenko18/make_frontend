@@ -32,6 +32,25 @@ const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   currency: "BRL",
 });
 
+const paymentMethodLabelMap = {
+  pix: "Pix",
+  dinheiro: "Dinheiro",
+  cartao_credito: "Cartão de crédito",
+  cartao_debito: "Cartão de débito",
+  transferencia: "Transferência",
+  outro: "Outro",
+};
+
+const formatPaymentMethod = (method) => {
+  if (!method) return "-";
+  return (
+    paymentMethodLabelMap[method] ||
+    String(method)
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, (letter) => letter.toUpperCase())
+  );
+};
+
 const emptyExpenseForm = {
   amount: "",
   paymentMethod: "pix",
@@ -135,6 +154,13 @@ function Finance() {
           entry.service?.name ||
           entry.category?.name ||
           (entry.origin === "compra_manual" ? "Despesa manual" : "Ajuste"),
+        paymentMethod: formatPaymentMethod(entry.paymentMethod),
+        notes:
+          entry.notes ||
+          entry.observation ||
+          entry.observacao ||
+          entry.descriptionNote ||
+          "-",
         amount: currencyFormatter.format(Number(entry.amount || 0)),
         type: entry.type === "entrada" ? "Entrada" : "Saída",
       })),

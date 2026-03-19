@@ -58,6 +58,19 @@ export const PanelText = styled.p`
   line-height: 1.55;
 `;
 
+export const PaymentMethodValue = styled.p`
+  margin: 0;
+  color: var(--brand-900);
+  font-weight: 800;
+  font-size: 1.04rem;
+`;
+
+export const PaymentMethodMeta = styled.p`
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.86rem;
+`;
+
 export const List = styled.div`
   display: grid;
   gap: 12px;
@@ -94,13 +107,11 @@ export const ItemStatus = styled.span`
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: ${({ $status }) => {
-    if ($status === "pago") return "#1f8a55";
-    if ($status === "concluido") return "#b52f40";
+    if ($status === "encerrado") return "#5d2f7d";
     return "#195cad";
   }};
   background: ${({ $status }) => {
-    if ($status === "pago") return "#e6f7ef";
-    if ($status === "concluido") return "#fdebec";
+    if ($status === "encerrado") return "#ece1f1";
     return "#e8f3ff";
   }};
 `;

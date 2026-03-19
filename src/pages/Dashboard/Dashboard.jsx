@@ -1,5 +1,5 @@
 import { startTransition, useEffect, useMemo, useState } from "react";
-import { CalendarDays, LayoutDashboard } from "lucide-react";
+import { CalendarDays, WalletCards } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AppShell from "../../components/layout/AppShell";
 import PageHeader from "../../components/common/PageHeader";
@@ -19,8 +19,9 @@ import {
   ListItem,
   Panel,
   PanelHeader,
-  PanelText,
   PanelTitle,
+  PaymentMethodMeta,
+  PaymentMethodValue,
   RevenueBadge,
   SummaryGrid,
 } from "./dashboardStyled";
@@ -32,21 +33,62 @@ const normalizeStatus = (status) => {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-  if (value === "pago") return "pago";
-  if (value === "concluido") return "concluido";
+  if (value === "pago" || value === "concluido" || value === "encerrado") {
+    return "encerrado";
+  }
   return "agendado";
 };
 
 const statusPriority = {
   agendado: 0,
-  concluido: 1,
-  pago: 2,
+  encerrado: 1,
 };
 
 const statusLabel = {
   agendado: "Em aberto",
-  concluido: "Concluído",
-  pago: "Pago",
+  encerrado: "Encerrado",
+};
+
+const paymentMethodGroupLabel = {
+  pix: "Pix",
+  dinheiro: "Dinheiro",
+  cartao_credito: "Cartão de crédito",
+  cartao_debito: "Cartão de débito",
+  transferencia: "Transferência",
+  outros: "Outros",
+};
+
+const normalizePaymentMethodGroup = (method) => {
+  const value = String(method || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[-\s]+/g, "_");
+
+  if (value === "pix") return "pix";
+  if (value === "dinheiro") return "dinheiro";
+  if (
+    value === "cartao_credito" ||
+    value === "credito" ||
+    value === "credito_cartao" ||
+    value === "cartao_de_credito"
+  ) {
+    return "cartao_credito";
+  }
+  if (
+    value === "cartao_debito" ||
+    value === "debito" ||
+    value === "debito_cartao" ||
+    value === "cartao_de_debito"
+  ) {
+    return "cartao_debito";
+  }
+  if (value === "cartao") {
+    return "cartao_credito";
+  }
+  if (value === "transferencia") return "transferencia";
+  return "outros";
 };
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
@@ -110,7 +152,7 @@ function Dashboard() {
           const appointmentDate = new Date(appointment.scheduledAt);
           return (
             appointmentDate >= now &&
-            normalizeStatus(appointment.status) !== "pago"
+            normalizeStatus(appointment.status) !== "encerrado"
           );
         })
         .sort((left, right) => {
@@ -146,6 +188,38 @@ function Dashboard() {
         .reduce((total, entry) => total + Number(entry.amount || 0), 0),
     [entries, now],
   );
+
+  const monthlyRevenueByPaymentMethod = useMemo(() => {
+    const totals = {
+      pix: 0,
+      dinheiro: 0,
+      cartao_credito: 0,
+      cartao_debito: 0,
+      transferencia: 0,
+      outros: 0,
+    };
+
+    entries.forEach((entry) => {
+      const paidAt = new Date(entry.paidAt || entry.createdAt || now);
+      const isCurrentMonth =
+        paidAt.getMonth() === now.getMonth() &&
+        paidAt.getFullYear() === now.getFullYear();
+
+      if (entry.type !== "entrada" || !isCurrentMonth) return;
+
+      const amount = Number(entry.amount || 0);
+      const key = normalizePaymentMethodGroup(entry.paymentMethod);
+      totals[key] += Number.isFinite(amount) ? amount : 0;
+    });
+
+    return Object.entries(totals)
+      .map(([key, amount]) => ({
+        key,
+        label: paymentMethodGroupLabel[key] || "Outros",
+        amount,
+      }))
+      .sort((left, right) => right.amount - left.amount);
+  }, [entries, now]);
 
   const summaryCards = useMemo(
     () => [
@@ -243,33 +317,36 @@ function Dashboard() {
 
           <Panel>
             <PanelHeader>
-              <PanelTitle>Resumo Rápido</PanelTitle>
-              <LayoutDashboard size={18} />
+              <PanelTitle>Ganhos por Pagamento</PanelTitle>
+              <WalletCards size={18} />
             </PanelHeader>
 
-            <List>
-              <ListItem>
-                <ItemTitle>Agenda</ItemTitle>
-                <PanelText>
-                  Clique em um atendimento para concluir, marcar como pago ou
-                  excluir.
-                </PanelText>
-              </ListItem>
-              <ListItem>
-                <ItemTitle>Financeiro</ItemTitle>
-                <PanelText>
-                  Apenas atendimentos marcados como pago entram no fluxo de
-                  caixa.
-                </PanelText>
-              </ListItem>
-              <ListItem>
-                <ItemTitle>Clientes</ItemTitle>
-                <PanelText>
-                  O painel lateral mostra histórico e próxima sessão quando
-                  disponível.
-                </PanelText>
-              </ListItem>
-            </List>
+            {monthlyRevenueByPaymentMethod.length ? (
+              <List>
+                {monthlyRevenueByPaymentMethod.map((item) => (
+                  <ListItem key={item.key}>
+                    <ItemTitle>{item.label}</ItemTitle>
+                    <PaymentMethodValue>
+                      {currencyFormatter.format(item.amount)}
+                    </PaymentMethodValue>
+                  </ListItem>
+                ))}
+
+                <ListItem>
+                  <ItemTitle>Total do mês</ItemTitle>
+                  <PaymentMethodValue>
+                    {currencyFormatter.format(monthlyRevenue)}
+                  </PaymentMethodValue>
+                  <PaymentMethodMeta>
+                    Somente entradas do financeiro
+                  </PaymentMethodMeta>
+                </ListItem>
+              </List>
+            ) : (
+              <EmptyState>
+                Nenhum ganho com forma de pagamento registrada neste mês.
+              </EmptyState>
+            )}
           </Panel>
         </ContentGrid>
       </DashboardPage>

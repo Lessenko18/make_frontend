@@ -36,7 +36,7 @@ export const Table = styled.table`
   border-collapse: collapse;
 
   @media (max-width: 860px) {
-    min-width: 760px;
+    min-width: 980px;
   }
 
   @media (max-width: 720px) {
@@ -134,6 +134,12 @@ export const MobileValue = styled.span`
   font-weight: 700;
   color: var(--text-main);
   text-align: right;
+  max-width: 60%;
+  word-break: break-word;
+`;
+
+export const MutedText = styled.span`
+  color: var(--text-soft);
 `;
 
 export const MobileActions = styled(Actions)`

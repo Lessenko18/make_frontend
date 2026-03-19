@@ -81,10 +81,62 @@ const normalizeStatus = (status) => {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-  if (value === "pago") return "pago";
-  if (value === "concluido") return "concluido";
+  if (value === "pago") return "encerrado";
+  if (value === "concluido") return "encerrado";
+  if (value === "encerrado") return "encerrado";
   return "agendado";
 };
+
+const isFinishedStatus = (status) => normalizeStatus(status) === "encerrado";
+
+const toComparableId = (value) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "string" || typeof value === "number") {
+    return String(value);
+  }
+
+  if (typeof value === "object") {
+    if (value._id !== undefined && value._id !== null) return String(value._id);
+    if (value.id !== undefined && value.id !== null) return String(value.id);
+  }
+
+  return null;
+};
+
+const getClientIdFromAppointment = (appointment) =>
+  toComparableId(
+    appointment?.client?._id ??
+      appointment?.client?.id ??
+      appointment?.clientId ??
+      appointment?.client_id ??
+      appointment?.cliente?._id ??
+      appointment?.cliente?.id ??
+      appointment?.cliente ??
+      appointment?.client ??
+      null,
+  );
+
+const currencyFormatter = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+});
+
+const getAppointmentAmount = (appointment) => {
+  const rawValue =
+    appointment?.price ??
+    appointment?.amount ??
+    appointment?.value ??
+    appointment?.service?.valor ??
+    appointment?.service?.price ??
+    appointment?.category?.valor ??
+    appointment?.category?.price ??
+    0;
+
+  const amount = Number(rawValue);
+  return Number.isFinite(amount) ? amount : 0;
+};
+
+const formatCurrency = (value) => currencyFormatter.format(Number(value) || 0);
 
 const formatProcedureLabel = (appointment) => {
   const serviceName =
@@ -156,7 +208,7 @@ function Clients() {
     const map = new Map();
 
     appointments.forEach((appointment) => {
-      const clientId = appointment?.client?._id || appointment?.client;
+      const clientId = getClientIdFromAppointment(appointment);
       if (!clientId) return;
 
       const when = new Date(appointment.scheduledAt).getTime();
@@ -169,7 +221,7 @@ function Clients() {
       };
 
       if (
-        (status === "concluido" || status === "pago") &&
+        status === "encerrado" &&
         when <= now &&
         (!current.lastProcedure ||
           new Date(current.lastProcedure.scheduledAt).getTime() < when)
@@ -178,7 +230,7 @@ function Clients() {
       }
 
       if (
-        status !== "pago" &&
+        status !== "encerrado" &&
         when >= now &&
         (!current.nextProcedure ||
           new Date(current.nextProcedure.scheduledAt).getTime() > when)
@@ -191,6 +243,54 @@ function Clients() {
 
     return map;
   }, [appointments]);
+
+  const selectedClientId = useMemo(
+    () => toComparableId(detail?._id ?? detail?.id),
+    [detail?._id, detail?.id],
+  );
+
+  const selectedProcedures = useMemo(() => {
+    if (!selectedClientId) return null;
+    return proceduresByClient.get(selectedClientId) || null;
+  }, [proceduresByClient, selectedClientId]);
+
+  const completedHistory = useMemo(() => {
+    if (!selectedClientId) return [];
+
+    const historyFromApi = (detail.history || []).filter((item) =>
+      isFinishedStatus(item?.status),
+    );
+
+    const historyFromAppointments = appointments.filter((item) => {
+      const clientId = getClientIdFromAppointment(item);
+      return clientId === selectedClientId && isFinishedStatus(item?.status);
+    });
+
+    const merged = new Map();
+
+    [...historyFromApi, ...historyFromAppointments].forEach((item) => {
+      const fallbackKey = `${item?.scheduledAt || "sem-data"}-${item?.service?._id || item?.category?._id || item?.serviceName || "servico"}`;
+      const key = item?._id || fallbackKey;
+      if (!merged.has(key)) {
+        merged.set(key, item);
+      }
+    });
+
+    return Array.from(merged.values()).sort((a, b) => {
+      const dateA = new Date(a?.scheduledAt || 0).getTime();
+      const dateB = new Date(b?.scheduledAt || 0).getTime();
+      return dateB - dateA;
+    });
+  }, [appointments, detail?.history, selectedClientId]);
+
+  const completedHistoryTotal = useMemo(
+    () =>
+      completedHistory.reduce(
+        (total, item) => total + getAppointmentAmount(item),
+        0,
+      ),
+    [completedHistory],
+  );
 
   async function handleSelectClient(client) {
     setSelected(client._id);
@@ -360,25 +460,34 @@ function Clients() {
                     data-selected={selected === client._id ? "true" : "false"}
                     onClick={() => handleSelectClient(client)}
                   >
-                    <Td>{client.name}</Td>
-                    <Td>{client.phone}</Td>
-                    <Td>
-                      {proceduresByClient.get(client._id)?.lastProcedure
-                        ? formatProcedureLabel(
-                            proceduresByClient.get(client._id).lastProcedure,
-                          )
-                        : "—"}
-                    </Td>
-                    <Td>
-                      {proceduresByClient.get(client._id)?.nextProcedure
-                        ? formatProcedureLabel(
-                            proceduresByClient.get(client._id).nextProcedure,
-                          )
-                        : "—"}
-                    </Td>
-                    <Td>
-                      <ActionCell>{renderClientActions(client)}</ActionCell>
-                    </Td>
+                    {(() => {
+                      const clientId = toComparableId(client._id ?? client.id);
+                      const procedures = clientId
+                        ? proceduresByClient.get(clientId)
+                        : null;
+
+                      return (
+                        <>
+                          <Td>{client.name}</Td>
+                          <Td>{client.phone}</Td>
+                          <Td>
+                            {procedures?.lastProcedure
+                              ? formatProcedureLabel(procedures.lastProcedure)
+                              : "—"}
+                          </Td>
+                          <Td>
+                            {procedures?.nextProcedure
+                              ? formatProcedureLabel(procedures.nextProcedure)
+                              : "—"}
+                          </Td>
+                          <Td>
+                            <ActionCell>
+                              {renderClientActions(client)}
+                            </ActionCell>
+                          </Td>
+                        </>
+                      );
+                    })()}
                   </Tr>
                 ))}
               </tbody>
@@ -405,39 +514,48 @@ function Clients() {
                     key={client._id}
                     onClick={() => handleSelectClient(client)}
                   >
-                    <MobileClientHeader>
-                      <div>
-                        <MobileClientName>{client.name}</MobileClientName>
-                        <MobileClientMeta>
-                          {client.phone || "Sem WhatsApp"}
-                        </MobileClientMeta>
-                        <MobileClientMeta>
-                          Último:{" "}
-                          {proceduresByClient.get(client._id)?.lastProcedure
-                            ? formatProcedureLabel(
-                                proceduresByClient.get(client._id)
-                                  .lastProcedure,
-                              )
-                            : "—"}
-                        </MobileClientMeta>
-                        <MobileClientMeta>
-                          Próximo:{" "}
-                          {proceduresByClient.get(client._id)?.nextProcedure
-                            ? formatProcedureLabel(
-                                proceduresByClient.get(client._id)
-                                  .nextProcedure,
-                              )
-                            : "—"}
-                        </MobileClientMeta>
-                      </div>
-                      {selected === client._id ? (
-                        <span>Selecionada</span>
-                      ) : null}
-                    </MobileClientHeader>
+                    {(() => {
+                      const clientId = toComparableId(client._id ?? client.id);
+                      const procedures = clientId
+                        ? proceduresByClient.get(clientId)
+                        : null;
 
-                    <MobileClientActions>
-                      {renderClientActions(client)}
-                    </MobileClientActions>
+                      return (
+                        <>
+                          <MobileClientHeader>
+                            <div>
+                              <MobileClientName>{client.name}</MobileClientName>
+                              <MobileClientMeta>
+                                {client.phone || "Sem WhatsApp"}
+                              </MobileClientMeta>
+                              <MobileClientMeta>
+                                Último:{" "}
+                                {procedures?.lastProcedure
+                                  ? formatProcedureLabel(
+                                      procedures.lastProcedure,
+                                    )
+                                  : "—"}
+                              </MobileClientMeta>
+                              <MobileClientMeta>
+                                Próximo:{" "}
+                                {procedures?.nextProcedure
+                                  ? formatProcedureLabel(
+                                      procedures.nextProcedure,
+                                    )
+                                  : "—"}
+                              </MobileClientMeta>
+                            </div>
+                            {selected === client._id ? (
+                              <span>Selecionada</span>
+                            ) : null}
+                          </MobileClientHeader>
+
+                          <MobileClientActions>
+                            {renderClientActions(client)}
+                          </MobileClientActions>
+                        </>
+                      );
+                    })()}
                   </MobileClientCard>
                 ))}
             </MobileClientList>
@@ -489,29 +607,29 @@ function Clients() {
                   </DetailSection>
                 )}
 
-                {detail.procedures?.lastProcedure && (
+                {selectedProcedures?.lastProcedure && (
                   <DetailSection>
                     <DetailLabel>Último serviço:</DetailLabel>
                     <DetailText>
-                      {detail.procedures.lastProcedure.service?.name ||
-                        detail.procedures.lastProcedure.category?.name}{" "}
+                      {selectedProcedures.lastProcedure.service?.name ||
+                        selectedProcedures.lastProcedure.category?.name}{" "}
                       -{" "}
                       {new Date(
-                        detail.procedures.lastProcedure.scheduledAt,
+                        selectedProcedures.lastProcedure.scheduledAt,
                       ).toLocaleDateString("pt-BR")}
                     </DetailText>
                   </DetailSection>
                 )}
 
-                {detail.procedures?.nextProcedure && (
+                {selectedProcedures?.nextProcedure && (
                   <DetailSection>
                     <DetailLabel>Próximo serviço:</DetailLabel>
                     <DetailText>
-                      {detail.procedures.nextProcedure.service?.name ||
-                        detail.procedures.nextProcedure.category?.name}{" "}
+                      {selectedProcedures.nextProcedure.service?.name ||
+                        selectedProcedures.nextProcedure.category?.name}{" "}
                       -{" "}
                       {new Date(
-                        detail.procedures.nextProcedure.scheduledAt,
+                        selectedProcedures.nextProcedure.scheduledAt,
                       ).toLocaleDateString("pt-BR")}
                     </DetailText>
                   </DetailSection>
@@ -521,33 +639,43 @@ function Clients() {
                   <DetailLabel>Histórico de serviços:</DetailLabel>
                   {historyLoading ? (
                     <DetailText>Carregando histórico...</DetailText>
-                  ) : detail.history?.length ? (
+                  ) : completedHistory.length ? (
                     <HistoryList>
-                      {detail.history.map((item) => (
-                        <HistoryItem
-                          key={
-                            item._id ||
-                            `${item.scheduledAt}-${item.service?._id || item.category?._id || item.serviceName}`
-                          }
-                        >
-                          <strong>
-                            {item.service?.name ||
-                              item.category?.name ||
-                              item.serviceName ||
-                              "Serviço"}
-                          </strong>{" "}
-                          -{" "}
-                          {item.scheduledAt
-                            ? new Date(item.scheduledAt).toLocaleDateString(
-                                "pt-BR",
-                              )
-                            : "Sem data"}
-                        </HistoryItem>
-                      ))}
+                      {completedHistory.map((item) => {
+                        const amount = getAppointmentAmount(item);
+                        return (
+                          <HistoryItem
+                            key={
+                              item._id ||
+                              `${item.scheduledAt}-${item.service?._id || item.category?._id || item.serviceName}`
+                            }
+                          >
+                            <strong>
+                              {item.service?.name ||
+                                item.category?.name ||
+                                item.serviceName ||
+                                "Serviço"}
+                            </strong>{" "}
+                            -{" "}
+                            {item.scheduledAt
+                              ? new Date(item.scheduledAt).toLocaleDateString(
+                                  "pt-BR",
+                                )
+                              : "Sem data"}{" "}
+                            - {formatCurrency(amount)}
+                          </HistoryItem>
+                        );
+                      })}
                     </HistoryList>
                   ) : (
                     <DetailText>Nenhum serviço no histórico.</DetailText>
                   )}
+                  {!historyLoading && completedHistory.length ? (
+                    <DetailText style={{ marginTop: 8, fontWeight: 700 }}>
+                      Total de procedimentos:{" "}
+                      {formatCurrency(completedHistoryTotal)}
+                    </DetailText>
+                  ) : null}
                 </DetailSection>
 
                 <DetailSection>

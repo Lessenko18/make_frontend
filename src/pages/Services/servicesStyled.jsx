@@ -1,5 +1,17 @@
 import styled from "styled-components";
 
+const toneTextByName = {
+  lilas: "#7e54a7",
+  dourado: "#9a7a24",
+  rosinha: "#b45a85",
+};
+
+const toneDotByName = {
+  lilas: "#cdb0eb",
+  dourado: "#eed9a1",
+  rosinha: "#f0b7cf",
+};
+
 export const ServicesPage = styled.section`
   max-width: 1120px;
   margin: 0 auto;
@@ -78,6 +90,23 @@ export const MobileTitle = styled.h3`
   margin: 0;
   font-size: 1rem;
   color: var(--text-main);
+`;
+
+export const ServiceName = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: ${({ $tone }) => toneTextByName[$tone] || toneTextByName.lilas};
+  font-weight: 700;
+`;
+
+export const ColorDot = styled.span`
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: ${({ $tone }) => toneDotByName[$tone] || toneDotByName.lilas};
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.6);
+  flex-shrink: 0;
 `;
 
 export const MobilePrice = styled.p`

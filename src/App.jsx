@@ -17,12 +17,10 @@ function PrivateRoute({ children }) {
 }
 
 function App() {
-  const defaultRoute = isAuthenticated() ? "/financeiro" : "/login";
-
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to={defaultRoute} replace />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Auth />} />
         <Route
           path="/dashboard"

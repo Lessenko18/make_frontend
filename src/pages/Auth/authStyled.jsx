@@ -41,12 +41,12 @@ export const AuthContainer = styled.section`
     rgb(247 239 251 / 0.8)
   );
   box-shadow: 0 20px 48px rgb(88 45 103 / 0.1);
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(420px, 460px);
+  place-items: center;
   overflow: hidden;
 
   @media (max-width: 920px) {
-    grid-template-columns: 1fr;
     min-height: calc(100dvh - 20px);
     width: min(100%, calc(100vw - 12px));
     border-radius: 14px;
@@ -54,7 +54,8 @@ export const AuthContainer = styled.section`
 `;
 
 export const LeftArtwork = styled.div`
-  position: relative;
+  position: absolute;
+  inset: 0;
   isolation: isolate;
   overflow: hidden;
   background:
@@ -64,6 +65,7 @@ export const LeftArtwork = styled.div`
       transparent 42%
     ),
     linear-gradient(140deg, rgb(255 255 255 / 0.82), rgb(248 238 252 / 0.92));
+  pointer-events: none;
 
   &::before,
   &::after {
@@ -100,8 +102,6 @@ export const LeftArtwork = styled.div`
   }
 
   @media (max-width: 920px) {
-    min-height: 230px;
-
     &::before,
     &::after {
       left: 50%;
@@ -123,14 +123,21 @@ export const PanelGlow = styled.div`
 `;
 
 export const AuthCard = styled.article`
+  position: relative;
+  z-index: 1;
   align-self: center;
   justify-self: center;
   width: min(100%, 420px);
   margin: 32px 18px;
   border: 1px solid #eadff0;
-  border-radius: 16px;
-  background: linear-gradient(180deg, #fff 0%, #fefcff 100%);
-  box-shadow: 0 14px 34px rgb(77 30 99 / 0.12);
+  border-radius: 22px;
+  background: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.94),
+    rgb(254 252 255 / 0.92)
+  );
+  box-shadow: 0 24px 56px rgb(77 30 99 / 0.16);
+  backdrop-filter: blur(10px);
   padding: 24px 28px 20px;
   animation: ${fadeUp} 420ms ease;
   max-height: none;
@@ -142,9 +149,8 @@ export const AuthCard = styled.article`
   }
 
   @media (max-width: 920px) {
-    margin: -56px 14px 14px;
-    width: auto;
-    z-index: 1;
+    margin: 18px 14px;
+    width: min(100%, 420px);
     max-height: none;
     padding: 24px 22px 20px;
     justify-self: center;

@@ -1,6 +1,7 @@
 import api from "./api";
 
 const AUTH_TOKEN_KEY = "auth:token";
+const LEGACY_AUTH_TOKEN_STORAGE_KEY = "auth:token";
 
 const AUTH_LOGIN_ENDPOINT =
   import.meta.env.VITE_AUTH_LOGIN_ENDPOINT ?? "/auth/login";
@@ -57,15 +58,24 @@ async function postWithEndpointFallback(endpoints, payload) {
 
 export function setAuthToken(token) {
   if (!token) return;
-  localStorage.setItem(AUTH_TOKEN_KEY, token);
+  sessionStorage.setItem(AUTH_TOKEN_KEY, token);
 }
 
 export function getAuthToken() {
-  return localStorage.getItem(AUTH_TOKEN_KEY);
+  const sessionToken = sessionStorage.getItem(AUTH_TOKEN_KEY);
+  if (sessionToken) return sessionToken;
+
+  const legacyToken = localStorage.getItem(LEGACY_AUTH_TOKEN_STORAGE_KEY);
+  if (legacyToken) {
+    localStorage.removeItem(LEGACY_AUTH_TOKEN_STORAGE_KEY);
+  }
+
+  return null;
 }
 
 export function clearAuthToken() {
-  localStorage.removeItem(AUTH_TOKEN_KEY);
+  sessionStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(LEGACY_AUTH_TOKEN_STORAGE_KEY);
 }
 
 export function isAuthenticated() {

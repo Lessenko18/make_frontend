@@ -12,6 +12,7 @@ import {
 import {
   Actions,
   Card,
+  ColorDot,
   EmptyState,
   ErrorText,
   Field,
@@ -29,6 +30,7 @@ import {
   ModalOverlay,
   ModalTitle,
   PrimaryButton,
+  ServiceName,
   ServicesPage,
   Table,
   Td,
@@ -36,6 +38,23 @@ import {
 } from "./servicesStyled";
 
 const emptyForm = { name: "", valor: "" };
+
+const normalizeText = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+const serviceColorByName = {
+  "maquiagem express": "lilas",
+  "maquiagem noiva": "dourado",
+  "maquiagem social": "rosinha",
+  "previa de maquiagem noiva": "dourado",
+};
+
+const getServiceTone = (name) =>
+  serviceColorByName[normalizeText(name)] || "lilas";
 
 function Services() {
   const [services, setServices] = useState([]);
@@ -173,67 +192,85 @@ function Services() {
                   </tr>
                 </thead>
                 <tbody>
-                  {services.map((service) => (
-                    <tr key={service._id}>
-                      <Td>{service.name}</Td>
-                      <Td>
-                        {Number(service.valor).toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                        })}
-                      </Td>
-                      <Td>
-                        <Actions>
-                          <IconButton
-                            type="button"
-                            onClick={() => openEditModal(service)}
-                            aria-label="Editar serviço"
-                          >
-                            <Pencil size={16} />
-                          </IconButton>
-                          <IconButton
-                            type="button"
-                            onClick={() => setDeleteConfirm(service)}
-                            aria-label="Excluir serviço"
-                          >
-                            <Trash2 size={16} />
-                          </IconButton>
-                        </Actions>
-                      </Td>
-                    </tr>
-                  ))}
+                  {services.map((service) => {
+                    const tone = getServiceTone(service.name);
+
+                    return (
+                      <tr key={service._id}>
+                        <Td>
+                          <ServiceName $tone={tone}>
+                            <ColorDot $tone={tone} />
+                            {service.name}
+                          </ServiceName>
+                        </Td>
+                        <Td>
+                          {Number(service.valor).toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          })}
+                        </Td>
+                        <Td>
+                          <Actions>
+                            <IconButton
+                              type="button"
+                              onClick={() => openEditModal(service)}
+                              aria-label="Editar serviço"
+                            >
+                              <Pencil size={16} />
+                            </IconButton>
+                            <IconButton
+                              type="button"
+                              onClick={() => setDeleteConfirm(service)}
+                              aria-label="Excluir serviço"
+                            >
+                              <Trash2 size={16} />
+                            </IconButton>
+                          </Actions>
+                        </Td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </Table>
 
               <MobileList>
-                {services.map((service) => (
-                  <MobileCard key={service._id}>
-                    <MobileTitle>{service.name}</MobileTitle>
-                    <MobilePrice>
-                      {Number(service.valor).toLocaleString("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      })}
-                    </MobilePrice>
+                {services.map((service) => {
+                  const tone = getServiceTone(service.name);
 
-                    <MobileActions>
-                      <IconButton
-                        type="button"
-                        onClick={() => openEditModal(service)}
-                        aria-label="Editar serviço"
-                      >
-                        <Pencil size={16} />
-                      </IconButton>
-                      <IconButton
-                        type="button"
-                        onClick={() => setDeleteConfirm(service)}
-                        aria-label="Excluir serviço"
-                      >
-                        <Trash2 size={16} />
-                      </IconButton>
-                    </MobileActions>
-                  </MobileCard>
-                ))}
+                  return (
+                    <MobileCard key={service._id}>
+                      <MobileTitle>
+                        <ServiceName $tone={tone}>
+                          <ColorDot $tone={tone} />
+                          {service.name}
+                        </ServiceName>
+                      </MobileTitle>
+                      <MobilePrice>
+                        {Number(service.valor).toLocaleString("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        })}
+                      </MobilePrice>
+
+                      <MobileActions>
+                        <IconButton
+                          type="button"
+                          onClick={() => openEditModal(service)}
+                          aria-label="Editar serviço"
+                        >
+                          <Pencil size={16} />
+                        </IconButton>
+                        <IconButton
+                          type="button"
+                          onClick={() => setDeleteConfirm(service)}
+                          aria-label="Excluir serviço"
+                        >
+                          <Trash2 size={16} />
+                        </IconButton>
+                      </MobileActions>
+                    </MobileCard>
+                  );
+                })}
               </MobileList>
             </>
           )}

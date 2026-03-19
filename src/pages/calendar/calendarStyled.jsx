@@ -34,18 +34,18 @@ export const CalendarContainer = styled.div`
   .fc-event {
     border: 0 !important;
     box-shadow: 0 2px 8px rgb(41 32 61 / 0.2);
-    color: #fff !important;
+    color: #3f3050 !important;
   }
 
   .fc-event-main {
-    color: #fff !important;
+    color: #3f3050 !important;
   }
 
   .fc-event-title {
     font-weight: 700;
     font-size: 0.88rem;
     padding: 4px 6px;
-    color: #fff !important;
+    color: #3f3050 !important;
   }
 
   .fc-daygrid-dot-event .fc-event-title {
@@ -54,30 +54,52 @@ export const CalendarContainer = styled.div`
 
   .fc-daygrid-event-dot {
     border-width: 6px;
+    display: none;
   }
 
-  .event-status-agendado {
-    background: linear-gradient(135deg, #2374d7, #3a9bf7) !important;
+  .fc-daygrid-dot-event .fc-event-time {
+    margin-left: 2px;
   }
 
-  .event-status-agendado .fc-daygrid-event-dot {
-    border-color: #2374d7 !important;
+  .event-service-lilas {
+    --event-start: #d9c8ef;
+    --event-end: #eadcf9;
+    --event-dot: #af8ad8;
   }
 
-  .event-status-concluido {
-    background: linear-gradient(135deg, #cc3b3b, #f15b5b) !important;
+  .event-service-dourado {
+    --event-start: #f0e1b7;
+    --event-end: #f7ebcb;
+    --event-dot: #d2b164;
   }
 
-  .event-status-concluido .fc-daygrid-event-dot {
-    border-color: #cc3b3b !important;
+  .event-service-rosinha {
+    --event-start: #f6cfe0;
+    --event-end: #fbe0ec;
+    --event-dot: #da90b1;
   }
 
-  .event-status-pago {
-    background: linear-gradient(135deg, #1f8a55, #38b16f) !important;
+  .event-service-lilas,
+  .event-service-dourado,
+  .event-service-rosinha {
+    background: linear-gradient(
+      135deg,
+      var(--event-start),
+      var(--event-end)
+    ) !important;
   }
 
-  .event-status-pago .fc-daygrid-event-dot {
-    border-color: #1f8a55 !important;
+  .event-service-lilas .fc-daygrid-event-dot,
+  .event-service-dourado .fc-daygrid-event-dot,
+  .event-service-rosinha .fc-daygrid-event-dot {
+    border-color: var(--event-dot) !important;
+  }
+
+  .event-is-encerrado {
+    box-shadow:
+      inset 0 0 0 2px rgb(255 255 255 / 0.7),
+      0 2px 8px rgb(41 32 61 / 0.2) !important;
+    filter: saturate(0.82) brightness(0.96);
   }
 
   .fc-daygrid-day-frame {
@@ -290,14 +312,9 @@ export const Badge = styled.span`
     color: #195cad;
   }
 
-  &.status-concluido {
-    background: #fdebec;
-    color: #b52f40;
-  }
-
-  &.status-pago {
-    background: #e6f7ef;
-    color: #1f8a55;
+  &.status-encerrado {
+    background: #ece1f1;
+    color: #5d2f7d;
   }
 `;
 

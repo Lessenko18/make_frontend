@@ -53,11 +53,13 @@ export const Nav = styled.nav`
   display: flex;
   flex-direction: column;
   gap: 6px;
+  flex: 1;
 
   @media (max-width: 960px) {
     overflow-x: auto;
     flex-direction: row;
     padding-bottom: 4px;
+    flex: initial;
     scrollbar-width: none;
   }
 
@@ -105,6 +107,47 @@ export const SidebarItem = styled(NavLink)`
     &.is-active {
       border-color: #dccbe4;
       box-shadow: 0 8px 18px rgb(88 45 103 / 0.12);
+    }
+  }
+
+  @media (max-width: 640px) {
+    padding: 9px 12px;
+    font-size: 0.92rem;
+    gap: 8px;
+  }
+`;
+
+export const LogoutButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 11px 12px;
+  background: transparent;
+  color: #b42318;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease;
+
+  &:hover {
+    background: #fff1f0;
+    transform: translateX(2px);
+  }
+
+  @media (max-width: 960px) {
+    width: max-content;
+    padding: 10px 14px;
+    background: rgb(255 255 255 / 0.74);
+    border: 1px solid #f3c7c2;
+
+    &:hover {
+      transform: translateY(-1px);
     }
   }
 

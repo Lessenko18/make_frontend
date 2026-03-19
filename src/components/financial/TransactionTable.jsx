@@ -14,6 +14,7 @@ import {
   MobileRow,
   MobileTitle,
   MobileValue,
+  MutedText,
   Table,
   TableWrapper,
   Tag,
@@ -38,6 +39,8 @@ function TransactionTable({ rows, showActions = false }) {
             <Th>Data</Th>
             <Th>Descricao</Th>
             <Th>Categoria</Th>
+            <Th>Observacao</Th>
+            <Th>Forma de pagamento</Th>
             <Th>Valor</Th>
             <Th>Tipo</Th>
             {showActions ? <Th>Acoes</Th> : null}
@@ -45,11 +48,15 @@ function TransactionTable({ rows, showActions = false }) {
         </thead>
 
         <tbody>
-          {rows.map((row) => (
-            <tr key={`${row.date}-${row.description}`}>
+          {rows.map((row, index) => (
+            <tr key={`${row.date}-${row.description}-${index}`}>
               <Td>{row.date}</Td>
               <Td>{row.description}</Td>
               <Td>{row.category}</Td>
+              <Td>
+                <MutedText>{row.notes || "-"}</MutedText>
+              </Td>
+              <Td>{row.paymentMethod || "-"}</Td>
               <Td>{row.amount}</Td>
               <Td>
                 <Tag $income={row.type.toLowerCase() === "entrada"}>
@@ -77,8 +84,8 @@ function TransactionTable({ rows, showActions = false }) {
       </Table>
 
       <MobileList>
-        {rows.map((row) => (
-          <MobileCard key={`${row.date}-${row.description}`}>
+        {rows.map((row, index) => (
+          <MobileCard key={`${row.date}-${row.description}-${index}`}>
             <MobileHeader>
               <div>
                 <MobileTitle>{row.description}</MobileTitle>
@@ -97,6 +104,14 @@ function TransactionTable({ rows, showActions = false }) {
               <MobileRow>
                 <MobileLabel>Valor</MobileLabel>
                 <MobileValue>{row.amount}</MobileValue>
+              </MobileRow>
+              <MobileRow>
+                <MobileLabel>Observacao</MobileLabel>
+                <MobileValue>{row.notes || "-"}</MobileValue>
+              </MobileRow>
+              <MobileRow>
+                <MobileLabel>Pagamento</MobileLabel>
+                <MobileValue>{row.paymentMethod || "-"}</MobileValue>
               </MobileRow>
             </MobileMeta>
 
