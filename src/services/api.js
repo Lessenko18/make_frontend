@@ -32,6 +32,15 @@ function getStoredAuthToken() {
   return localStorage.getItem(AUTH_TOKEN_KEY);
 }
 
+function normalizeApiPath(url) {
+  if (!url || /^https?:\/\//i.test(url)) return url;
+
+  if (!url.startsWith("/")) return url;
+  if (/^\/api(\/|$)/i.test(url)) return url;
+
+  return `/api${url}`;
+}
+
 const api = axios.create({
   baseURL: resolveApiBaseUrl(),
   timeout: 12000,
@@ -39,6 +48,8 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = getStoredAuthToken();
+  config.url = normalizeApiPath(config.url);
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
