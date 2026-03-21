@@ -10,12 +10,18 @@ const AUTH_REGISTER_ENDPOINT =
 const AUTH_FORGOT_ENDPOINT =
   import.meta.env.VITE_AUTH_FORGOT_ENDPOINT ?? "/auth/forgot-password";
 
+const LOGIN_FALLBACK_ENDPOINTS = ["/api/auth/login", "/auth/login"];
 const REGISTER_FALLBACK_ENDPOINTS = [
+  "/api/auth/register",
   "/auth/register",
   "/auth/signup",
   "/auth/sign-up",
   "/users/register",
   "/users/signup",
+];
+const FORGOT_FALLBACK_ENDPOINTS = [
+  "/api/auth/forgot-password",
+  "/auth/forgot-password",
 ];
 
 function normalizePayload(data) {
@@ -83,7 +89,11 @@ export function isAuthenticated() {
 }
 
 export async function loginUser(payload) {
-  const { data } = await api.post(AUTH_LOGIN_ENDPOINT, payload);
+  const candidateEndpoints = createCandidateEndpoints(
+    AUTH_LOGIN_ENDPOINT,
+    LOGIN_FALLBACK_ENDPOINTS,
+  );
+  const { data } = await postWithEndpointFallback(candidateEndpoints, payload);
   const normalized = normalizePayload(data);
   const token = extractToken(normalized);
   if (token) setAuthToken(token);
@@ -100,6 +110,10 @@ export async function registerUser(payload) {
 }
 
 export async function requestPasswordReset(payload) {
-  const { data } = await api.post(AUTH_FORGOT_ENDPOINT, payload);
+  const candidateEndpoints = createCandidateEndpoints(
+    AUTH_FORGOT_ENDPOINT,
+    FORGOT_FALLBACK_ENDPOINTS,
+  );
+  const { data } = await postWithEndpointFallback(candidateEndpoints, payload);
   return normalizePayload(data);
 }
