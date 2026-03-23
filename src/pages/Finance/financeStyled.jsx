@@ -19,6 +19,26 @@ export const KpisGrid = styled.section`
   }
 `;
 
+export const FilterToolbar = styled.div`
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+`;
+
+export const FilterClearButton = styled.button`
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  color: var(--text-main);
+  font-weight: 700;
+  padding: 8px 14px;
+  cursor: pointer;
+
+  &:hover {
+    background: #f7f2fa;
+  }
+`;
+
 export const ModalOverlay = styled.div`
   position: fixed;
   inset: 0;
@@ -143,4 +163,55 @@ export const GhostButton = styled(Button)`
 export const PrimaryButton = styled(Button)`
   background: linear-gradient(135deg, var(--brand-800), var(--brand-700));
   color: #fff;
+`;
+
+export const PaginationWrap = styled.div`
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+`;
+
+export const PaginationInfo = styled.span`
+  color: var(--text-soft);
+  font-weight: 600;
+  font-size: 0.9rem;
+`;
+
+export const PaginationActions = styled.div`
+  display: flex;
+  gap: 8px;
+
+  @media (max-width: 640px) {
+    width: 100%;
+  }
+`;
+
+export const PaginationButton = styled.button`
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  color: var(--text-main);
+  font-weight: 700;
+  padding: 8px 14px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #f7f2fa;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 640px) {
+    flex: 1;
+  }
 `;

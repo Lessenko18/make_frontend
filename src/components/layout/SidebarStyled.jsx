@@ -74,6 +74,7 @@ export const SidebarItem = styled(NavLink)`
   display: flex;
   align-items: center;
   gap: 12px;
+  width: 100%;
   color: var(--text-main);
   font-weight: 600;
   border-radius: 12px;
@@ -89,8 +90,18 @@ export const SidebarItem = styled(NavLink)`
   }
 
   &.is-active {
-    background: var(--brand-100);
-    color: var(--brand-900);
+    background: var(--surface-200);
+    color: var(--text-main);
+    transform: translateX(2px);
+
+    svg {
+      color: var(--text-main);
+    }
+
+    span {
+      color: var(--text-main);
+      font-weight: 700;
+    }
   }
 
   @media (max-width: 960px) {
@@ -105,8 +116,19 @@ export const SidebarItem = styled(NavLink)`
     }
 
     &.is-active {
-      border-color: #dccbe4;
-      box-shadow: 0 8px 18px rgb(88 45 103 / 0.12);
+      border-color: transparent;
+      background: rgb(255 255 255 / 0.74);
+      transform: translateY(-1px);
+      box-shadow: none;
+
+      svg {
+        color: var(--text-main);
+      }
+
+      span {
+        color: var(--text-main);
+        font-weight: 700;
+      }
     }
   }
 

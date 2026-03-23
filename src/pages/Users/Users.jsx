@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import AppShell from "../../components/layout/AppShell";
 import ConfirmDialog from "../../components/common/ConfirmDialog";
+import PageHeader from "../../components/common/PageHeader";
 import { useToast } from "../../components/common/useToast";
 import {
   createUser,
@@ -11,12 +12,10 @@ import {
 } from "../../services/usersService";
 import {
   Actions,
-  AddButton,
   Empty,
   Form,
   FormActions,
   GhostButton,
-  Header,
   IconButton,
   Input,
   Label,
@@ -32,7 +31,6 @@ import {
   Table,
   Td,
   Th,
-  Title,
   Tr,
   UsersPage,
 } from "./usersStyled";
@@ -149,13 +147,13 @@ function Users() {
   return (
     <AppShell activeSection="usuarios">
       <UsersPage>
-        <Header>
-          <Title>Gerenciar Usuários</Title>
-          <AddButton type="button" onClick={openCreate}>
-            <Plus size={16} />
-            Novo Usuário
-          </AddButton>
-        </Header>
+        <PageHeader
+          breadcrumb="Configurações / Usuários"
+          title="Gerenciar Usuários"
+          actionLabel="Novo Usuário"
+          actionIcon={<Plus size={16} />}
+          onAction={openCreate}
+        />
 
         <Panel>
           {loading ? <Empty>Carregando usuários...</Empty> : null}

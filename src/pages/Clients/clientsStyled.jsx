@@ -1,11 +1,11 @@
 import styled from "styled-components";
 
-/* ── tokens de cor rose/pink específicos de Clientes ── */
-const rose900 = "#8b2252";
-const rose700 = "#c0556e";
-const rose500 = "#e8899a";
-const rose100 = "#fde8ed";
-const roseBorder = "#f5cfd7";
+/* ── tokens de cor pastel roxa para combinar com o tema ── */
+const rose900 = "#5a2f78";
+const rose700 = "#7e52a1";
+const rose500 = "#a882c5";
+const rose100 = "#f1e7f8";
+const roseBorder = "#e2cfee";
 
 /* ── layout da página ── */
 export const ClientsPage = styled.section`
@@ -36,7 +36,7 @@ export const PageTitle = styled.h1`
 export const NewClientButton = styled.button`
   border: 0;
   border-radius: var(--radius-pill);
-  background: linear-gradient(135deg, ${rose900}, ${rose700});
+  background: linear-gradient(135deg, var(--brand-800), var(--brand-700));
   color: #fff;
   padding: 11px 20px;
   display: inline-flex;
@@ -44,7 +44,7 @@ export const NewClientButton = styled.button`
   gap: 8px;
   font-weight: 700;
   letter-spacing: 0.3px;
-  box-shadow: 0 6px 20px rgb(192 85 110 / 0.28);
+  box-shadow: 0 6px 20px rgb(88 45 103 / 0.28);
   cursor: pointer;
   white-space: nowrap;
 
@@ -112,7 +112,7 @@ export const TableCard = styled.div`
   background: var(--surface-100);
   border-radius: var(--radius-lg);
   border: 1px solid ${roseBorder};
-  box-shadow: 0 8px 24px rgb(192 85 110 / 0.06);
+  box-shadow: 0 8px 24px rgb(88 45 103 / 0.08);
   overflow: hidden;
 
   @media (max-width: 720px) {
@@ -147,13 +147,13 @@ export const Tr = styled.tr`
 
   &:hover,
   &[data-selected="true"] {
-    background: #fff5f7;
+    background: #f7f0fb;
   }
 `;
 
 export const Td = styled.td`
   padding: 14px 16px;
-  border-bottom: 1px solid #fce7ec;
+  border-bottom: 1px solid #eee2f6;
   font-size: 0.97rem;
 `;
 
@@ -193,7 +193,7 @@ export const DetailPanel = styled.aside`
   background: var(--surface-100);
   border-radius: var(--radius-lg);
   border: 1px solid ${roseBorder};
-  box-shadow: 0 8px 24px rgb(192 85 110 / 0.06);
+  box-shadow: 0 8px 24px rgb(88 45 103 / 0.08);
   padding: 24px 20px;
   display: flex;
   flex-direction: column;
@@ -218,7 +218,7 @@ export const MobileClientCard = styled.article`
   border-radius: var(--radius-lg);
   border: 1px solid ${roseBorder};
   background: var(--surface-100);
-  box-shadow: 0 8px 24px rgb(192 85 110 / 0.08);
+  box-shadow: 0 8px 24px rgb(88 45 103 / 0.1);
   padding: 16px;
 `;
 
@@ -354,7 +354,7 @@ export const AvatarOverlay = styled.span`
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: rgba(139, 34, 82, 0.55);
+  background: rgba(90, 47, 120, 0.55);
   display: grid;
   place-items: center;
   color: #fff;
@@ -406,7 +406,7 @@ export const PhotoDeleteBtn = styled.button`
   height: 22px;
   border-radius: 50%;
   border: 0;
-  background: rgba(139, 34, 82, 0.85);
+  background: rgba(90, 47, 120, 0.85);
   color: #fff;
   display: grid;
   place-items: center;
@@ -519,5 +519,46 @@ export const LightboxNavBtn = styled.button`
     width: 40px;
     height: 40px;
     ${({ $side }) => ($side === "left" ? "left: 10px;" : "right: 10px;")}
+  }
+`;
+
+export const PaginationWrap = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid ${roseBorder};
+  background: #f8f2fc;
+
+  @media (max-width: 720px) {
+    border-radius: var(--radius-lg);
+    border: 1px solid ${roseBorder};
+    margin-top: 8px;
+  }
+`;
+
+export const PaginationInfo = styled.span`
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  font-weight: 600;
+`;
+
+export const PaginationButton = styled.button`
+  border: 1px solid ${roseBorder};
+  background: #fff;
+  color: ${rose900};
+  border-radius: var(--radius-pill);
+  padding: 8px 14px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: ${rose100};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 `;

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import AppShell from "../../components/layout/AppShell";
 import ConfirmDialog from "../../components/common/ConfirmDialog";
+import PageHeader from "../../components/common/PageHeader";
 import NewClientModal from "./NewClientModal";
 import EditClientModal from "./EditClientModal";
 import {
@@ -45,9 +46,9 @@ import {
   MobileClientList,
   MobileClientMeta,
   MobileClientName,
-  NewClientButton,
-  PageTitle,
-  PageTop,
+  PaginationButton,
+  PaginationInfo,
+  PaginationWrap,
   PhotoDeleteBtn,
   PhotoGrid,
   PhotoThumb,
@@ -150,6 +151,8 @@ const formatProcedureLabel = (appointment) => {
   return `${serviceName} - ${date}`;
 };
 
+const CLIENTS_PER_PAGE = 10;
+
 function Clients() {
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState("");
@@ -161,6 +164,7 @@ function Clients() {
   const [appointments, setAppointments] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [lightboxIndex, setLightboxIndex] = useState(null);
 
@@ -317,9 +321,35 @@ function Clients() {
     }
   }
 
-  const filtered = clients.filter((c) =>
-    c.name?.toLowerCase().includes(search.toLowerCase()),
+  const filtered = useMemo(
+    () =>
+      clients.filter((c) =>
+        c.name?.toLowerCase().includes(search.toLowerCase()),
+      ),
+    [clients, search],
   );
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / CLIENTS_PER_PAGE));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  useEffect(() => {
+    setCurrentPage((prev) => Math.min(prev, totalPages));
+  }, [totalPages]);
+
+  const paginatedClients = useMemo(() => {
+    const start = (currentPage - 1) * CLIENTS_PER_PAGE;
+    return filtered.slice(start, start + CLIENTS_PER_PAGE);
+  }, [currentPage, filtered]);
+
+  const pageRangeLabel = useMemo(() => {
+    if (!filtered.length) return "0-0 de 0";
+    const start = (currentPage - 1) * CLIENTS_PER_PAGE + 1;
+    const end = Math.min(currentPage * CLIENTS_PER_PAGE, filtered.length);
+    return `${start}-${end} de ${filtered.length}`;
+  }, [currentPage, filtered.length]);
 
   function renderClientActions(client) {
     return (
@@ -411,13 +441,13 @@ function Clients() {
   return (
     <AppShell activeSection="clientes">
       <ClientsPage>
-        <PageTop>
-          <PageTitle>Clientes Cadastradas</PageTitle>
-          <NewClientButton type="button" onClick={() => setModalOpen(true)}>
-            <Plus size={18} />
-            Nova Cliente
-          </NewClientButton>
-        </PageTop>
+        <PageHeader
+          breadcrumb="Clientes / Gestão"
+          title="Clientes Cadastradas"
+          actionLabel="Nova Cliente"
+          actionIcon={<Plus size={18} />}
+          onAction={() => setModalOpen(true)}
+        />
 
         <SearchWrapper>
           <SearchIcon>
@@ -454,7 +484,7 @@ function Clients() {
                     <td colSpan={5}>Nenhuma cliente encontrada.</td>
                   </EmptyRow>
                 )}
-                {filtered.map((client) => (
+                {paginatedClients.map((client) => (
                   <Tr
                     key={client._id}
                     data-selected={selected === client._id ? "true" : "false"}
@@ -509,7 +539,7 @@ function Clients() {
               )}
 
               {!loading &&
-                filtered.map((client) => (
+                paginatedClients.map((client) => (
                   <MobileClientCard
                     key={client._id}
                     onClick={() => handleSelectClient(client)}
@@ -559,6 +589,32 @@ function Clients() {
                   </MobileClientCard>
                 ))}
             </MobileClientList>
+
+            {!loading && filtered.length > 0 ? (
+              <PaginationWrap>
+                <PaginationInfo>{pageRangeLabel}</PaginationInfo>
+                <ActionCell>
+                  <PaginationButton
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </PaginationButton>
+                  <PaginationButton
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    Próxima
+                  </PaginationButton>
+                </ActionCell>
+              </PaginationWrap>
+            ) : null}
           </TableCard>
 
           <DetailPanel>

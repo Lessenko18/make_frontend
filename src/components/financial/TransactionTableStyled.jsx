@@ -51,12 +51,78 @@ export const Th = styled.th`
   text-transform: uppercase;
   font-size: 0.9rem;
   letter-spacing: 0.2px;
+  vertical-align: top;
+`;
+
+export const HeaderLabelButton = styled.button`
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  color: ${({ $active }) =>
+    $active ? "var(--brand-800)" : "var(--text-main)"};
+  cursor: pointer;
+
+  &:hover {
+    color: var(--brand-800);
+  }
+`;
+
+export const HeaderFilterContainer = styled.div`
+  margin-top: 8px;
+`;
+
+export const FilterInput = styled.input`
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+  background: #fff;
+  padding: 8px 10px;
+  outline: none;
+  font-size: 0.88rem;
+
+  &:focus {
+    border-color: var(--brand-700);
+    box-shadow: 0 0 0 3px rgb(114 65 138 / 0.12);
+  }
+`;
+
+export const FilterSelect = styled.select`
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+  background: #fff;
+  padding: 8px 10px;
+  outline: none;
+  font-size: 0.88rem;
+
+  &:focus {
+    border-color: var(--brand-700);
+    box-shadow: 0 0 0 3px rgb(114 65 138 / 0.12);
+  }
+`;
+
+export const RangeFilter = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 `;
 
 export const Td = styled.td`
   text-align: left;
   padding: 14px 16px;
   border-bottom: 1px solid #f1e9f5;
+`;
+
+export const EmptyStateRow = styled.tr``;
+
+export const EmptyStateCell = styled(Td)`
+  text-align: center;
+  padding: 28px 16px;
 `;
 
 export const Tag = styled.span`

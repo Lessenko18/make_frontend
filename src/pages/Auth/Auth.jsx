@@ -106,9 +106,9 @@ function Auth() {
       await loginUser({ email: login.email, password: login.password });
       toast.success(
         "Login realizado",
-        "Você será redirecionada para o financeiro.",
+        "Você será redirecionada para o dashboard.",
       );
-      navigate("/financeiro", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       toast.error(
         "Falha no login",
@@ -258,25 +258,25 @@ function Auth() {
                   {isSubmitting ? "Entrando..." : "Entrar"}
                 </MainButton>
 
-                <Divider>
+                {/* <Divider>
                   <span>ou entre com</span>
-                </Divider>
+                </Divider> */}
 
-                <SocialActions>
+                {/* <SocialActions>
                   <SocialButton type="button" aria-label="Entrar com Google">
                     <Chrome size={17} />
                   </SocialButton>
                   <SocialButton type="button" aria-label="Entrar com Apple">
                     <Apple size={17} />
                   </SocialButton>
-                </SocialActions>
+                </SocialActions> */}
 
-                <FooterText>
+                {/* <FooterText>
                   Não tem uma conta?{" "}
                   <TextButton type="button" onClick={() => setMode("register")}>
                     Cadastre-se.
                   </TextButton>
-                </FooterText>
+                </FooterText> */}
               </form>
             )}
 

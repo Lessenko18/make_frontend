@@ -1,12 +1,14 @@
+import { Suspense, lazy } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import Finance from "./pages/Finance/Finance";
-import Clients from "./pages/Clients/Clients";
-import Calendar from "./pages/calendar/Calendar";
-import Services from "./pages/Services/Services";
-import Dashboard from "./pages/Dashboard/Dashboard";
-import Auth from "./pages/Auth/Auth";
 import { isAuthenticated } from "./services/authService";
-import Users from "./pages/Users/Users";
+
+const Finance = lazy(() => import("./pages/Finance/Finance"));
+const Clients = lazy(() => import("./pages/Clients/Clients"));
+const Calendar = lazy(() => import("./pages/calendar/Calendar"));
+const Services = lazy(() => import("./pages/Services/Services"));
+const Dashboard = lazy(() => import("./pages/Dashboard/Dashboard"));
+const Auth = lazy(() => import("./pages/Auth/Auth"));
+const Users = lazy(() => import("./pages/Users/Users"));
 
 function PrivateRoute({ children }) {
   if (!isAuthenticated()) {
@@ -16,61 +18,86 @@ function PrivateRoute({ children }) {
   return children;
 }
 
+function PublicRoute({ children }) {
+  if (isAuthenticated()) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+}
+
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<Auth />} />
-        <Route
-          path="/dashboard"
-          element={
-            <PrivateRoute>
-              <Dashboard />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/clientes"
-          element={
-            <PrivateRoute>
-              <Clients />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/agenda"
-          element={
-            <PrivateRoute>
-              <Calendar title="Agenda" />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/servicos"
-          element={
-            <PrivateRoute>
-              <Services />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/usuarios"
-          element={
-            <PrivateRoute>
-              <Users />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/financeiro"
-          element={
-            <PrivateRoute>
-              <Finance />
-            </PrivateRoute>
-          }
-        />
-      </Routes>
+      <Suspense fallback={null}>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <Navigate
+                to={isAuthenticated() ? "/dashboard" : "/login"}
+                replace
+              />
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Auth />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/clientes"
+            element={
+              <PrivateRoute>
+                <Clients />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/agenda"
+            element={
+              <PrivateRoute>
+                <Calendar title="Agenda" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/servicos"
+            element={
+              <PrivateRoute>
+                <Services />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/usuarios"
+            element={
+              <PrivateRoute>
+                <Users />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/financeiro"
+            element={
+              <PrivateRoute>
+                <Finance />
+              </PrivateRoute>
+            }
+          />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

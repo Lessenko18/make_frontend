@@ -8,6 +8,12 @@ import TransactionTable from "../../components/financial/TransactionTable";
 import {
   ErrorText,
   Field,
+  FilterClearButton,
+  PaginationActions,
+  PaginationButton,
+  PaginationInfo,
+  PaginationWrap,
+  FilterToolbar,
   FinancePage,
   Form,
   GhostButton,
@@ -58,6 +64,66 @@ const emptyExpenseForm = {
   notes: "",
 };
 
+const ENTRIES_PER_PAGE = 10;
+
+const emptyFilters = {
+  dateFrom: "",
+  dateTo: "",
+  description: "",
+  category: "",
+  notes: "",
+  paymentMethod: "",
+  amountMin: "",
+  amountMax: "",
+  type: "",
+};
+
+const normalizeFilters = (filters) =>
+  Object.entries(filters).reduce((acc, [key, value]) => {
+    if (value === undefined || value === null) return acc;
+
+    const normalizedValue = typeof value === "string" ? value.trim() : value;
+    if (normalizedValue === "") return acc;
+
+    acc[key] = normalizedValue;
+    return acc;
+  }, {});
+
+const syntheticCategories = new Set(["Despesa manual", "Ajuste"]);
+
+const buildApiFilters = (activeFilters) => {
+  const nextFilters = { ...activeFilters };
+
+  if (syntheticCategories.has(nextFilters.category)) {
+    delete nextFilters.category;
+  }
+
+  return nextFilters;
+};
+
+const applyLocalCategoryFilter = (financeEntries, activeFilters) => {
+  const selectedCategory = activeFilters.category;
+  if (!syntheticCategories.has(selectedCategory)) return financeEntries;
+
+  return financeEntries.filter(
+    (entry) => getEntryCategoryName(entry) === selectedCategory,
+  );
+};
+
+const getEntryCategoryName = (entry) =>
+  entry?.service?.name ||
+  entry?.category?.name ||
+  (entry?.origin === "compra_manual" ? "Despesa manual" : "Ajuste");
+
+const extractCategoryOptions = (financeEntries = []) =>
+  Array.from(
+    new Set(
+      financeEntries
+        .map((entry) => getEntryCategoryName(entry))
+        .filter((category) => category && category !== "-"),
+    ),
+  ).sort((a, b) => a.localeCompare(b, "pt-BR"));
+
 function Finance() {
   const {
     ToastContainer,
@@ -70,23 +136,123 @@ function Finance() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState(emptyExpenseForm);
+  const [filters, setFilters] = useState(emptyFilters);
+  const [categoryOptions, setCategoryOptions] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const loadEntries = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await listFinanceEntries();
-      setEntries(data);
-    } catch {
-      setEntries([]);
-      showErrorToast("Financeiro", "Não foi possível carregar os lançamentos.");
-    } finally {
-      setLoading(false);
-    }
-  }, [showErrorToast]);
+  const normalizedFilters = useMemo(() => normalizeFilters(filters), [filters]);
+  const hasActiveFilters = useMemo(
+    () => Object.keys(normalizedFilters).length > 0,
+    [normalizedFilters],
+  );
 
   useEffect(() => {
-    loadEntries();
-  }, [loadEntries]);
+    setCurrentPage(1);
+  }, [normalizedFilters]);
+
+  const loadEntries = useCallback(
+    async (activeFilters = {}) => {
+      try {
+        setLoading(true);
+        const apiFilters = buildApiFilters(activeFilters);
+        const data = await listFinanceEntries(apiFilters);
+        setEntries(applyLocalCategoryFilter(data, activeFilters));
+      } catch {
+        setEntries([]);
+        showErrorToast(
+          "Financeiro",
+          "Não foi possível carregar os lançamentos.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [showErrorToast],
+  );
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      loadEntries(normalizedFilters);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [loadEntries, normalizedFilters]);
+
+  const loadCategoryOptions = useCallback(async () => {
+    try {
+      const allEntries = await listFinanceEntries();
+      setCategoryOptions(extractCategoryOptions(allEntries));
+    } catch {
+      setCategoryOptions([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCategoryOptions();
+  }, [loadCategoryOptions]);
+
+  const handleFilterChange = useCallback((field, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setFilters(emptyFilters);
+  }, []);
+
+  const openModal = () => {
+    setModalOpen(true);
+    setSaving(false);
+    setError("");
+    setForm(emptyExpenseForm);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setSaving(false);
+    setError("");
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError("");
+
+    const parsedAmount = Number(form.amount);
+    if (Number.isNaN(parsedAmount) || parsedAmount <= 0) {
+      setError("Informe um valor válido para a despesa.");
+      return;
+    }
+
+    if (!form.description.trim()) {
+      setError("Descrição é obrigatória para compra manual.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await createManualExpense({
+        amount: parsedAmount,
+        paymentMethod: form.paymentMethod,
+        description: form.description.trim(),
+        notes: form.notes.trim() || undefined,
+      });
+      closeModal();
+      await loadCategoryOptions();
+      await loadEntries(normalizedFilters);
+      showSuccessToast(
+        "Despesa registrada",
+        "A compra manual foi adicionada ao fluxo de caixa.",
+      );
+    } catch (submitError) {
+      setError(
+        submitError?.response?.data?.message ||
+          "Não foi possível salvar a despesa manual.",
+      );
+      setSaving(false);
+    }
+  };
 
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
@@ -150,10 +316,7 @@ function Finance() {
           (entry.origin === "agendamento"
             ? `${entry.client?.name || "Cliente"} - ${entry.service?.name || entry.category?.name || "Serviço"}`
             : "Compra / despesa manual"),
-        category:
-          entry.service?.name ||
-          entry.category?.name ||
-          (entry.origin === "compra_manual" ? "Despesa manual" : "Ajuste"),
+        category: getEntryCategoryName(entry),
         paymentMethod: formatPaymentMethod(entry.paymentMethod),
         notes:
           entry.notes ||
@@ -167,56 +330,26 @@ function Finance() {
     [entries],
   );
 
-  const openModal = () => {
-    setModalOpen(true);
-    setSaving(false);
-    setError("");
-    setForm(emptyExpenseForm);
-  };
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(transactions.length / ENTRIES_PER_PAGE)),
+    [transactions.length],
+  );
 
-  const closeModal = () => {
-    setModalOpen(false);
-    setSaving(false);
-    setError("");
-  };
+  useEffect(() => {
+    setCurrentPage((prev) => Math.min(prev, totalPages));
+  }, [totalPages]);
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError("");
+  const paginatedTransactions = useMemo(() => {
+    const start = (currentPage - 1) * ENTRIES_PER_PAGE;
+    return transactions.slice(start, start + ENTRIES_PER_PAGE);
+  }, [currentPage, transactions]);
 
-    const parsedAmount = Number(form.amount);
-    if (Number.isNaN(parsedAmount) || parsedAmount <= 0) {
-      setError("Informe um valor válido para a despesa.");
-      return;
-    }
-
-    if (!form.description.trim()) {
-      setError("Descrição é obrigatória para compra manual.");
-      return;
-    }
-
-    try {
-      setSaving(true);
-      await createManualExpense({
-        amount: parsedAmount,
-        paymentMethod: form.paymentMethod,
-        description: form.description.trim(),
-        notes: form.notes.trim() || undefined,
-      });
-      closeModal();
-      await loadEntries();
-      showSuccessToast(
-        "Despesa registrada",
-        "A compra manual foi adicionada ao fluxo de caixa.",
-      );
-    } catch (submitError) {
-      setError(
-        submitError?.response?.data?.message ||
-          "Não foi possível salvar a despesa manual.",
-      );
-      setSaving(false);
-    }
-  };
+  const pageRangeLabel = useMemo(() => {
+    if (!transactions.length) return "0-0 de 0";
+    const start = (currentPage - 1) * ENTRIES_PER_PAGE + 1;
+    const end = Math.min(currentPage * ENTRIES_PER_PAGE, transactions.length);
+    return `${start}-${end} de ${transactions.length}`;
+  }, [currentPage, transactions.length]);
 
   return (
     <AppShell activeSection="financeiro">
@@ -243,7 +376,44 @@ function Finance() {
           ))}
         </KpisGrid>
 
-        <TransactionTable rows={loading ? [] : transactions} />
+        <FilterToolbar>
+          {hasActiveFilters ? (
+            <FilterClearButton type="button" onClick={clearFilters}>
+              Limpar filtros
+            </FilterClearButton>
+          ) : null}
+        </FilterToolbar>
+
+        <TransactionTable
+          rows={loading ? [] : paginatedTransactions}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          categoryOptions={categoryOptions}
+        />
+
+        {!loading && transactions.length > 0 ? (
+          <PaginationWrap>
+            <PaginationInfo>{pageRangeLabel}</PaginationInfo>
+            <PaginationActions>
+              <PaginationButton
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Anterior
+              </PaginationButton>
+              <PaginationButton
+                type="button"
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+              >
+                Próxima
+              </PaginationButton>
+            </PaginationActions>
+          </PaginationWrap>
+        ) : null}
 
         {modalOpen ? (
           <ModalOverlay onClick={closeModal}>
