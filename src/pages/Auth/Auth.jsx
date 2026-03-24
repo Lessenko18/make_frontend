@@ -258,7 +258,7 @@ function Auth() {
                   {isSubmitting ? "Entrando..." : "Entrar"}
                 </MainButton>
 
-                <Divider>
+                {/* <Divider>
                   <span>ou entre com</span>
                 </Divider>
 
@@ -276,7 +276,7 @@ function Auth() {
                   <TextButton type="button" onClick={() => setMode("register")}>
                     Cadastre-se.
                   </TextButton>
-                </FooterText>
+                </FooterText> */}
               </form>
             )}
 

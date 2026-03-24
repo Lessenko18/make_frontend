@@ -11,46 +11,26 @@ const fadeUp = keyframes`
   }
 `;
 
-const brushFloat = keyframes`
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) rotate(-10deg);
-  }
-  50% {
-    transform: translate3d(6px, -8px, 0) rotate(-7deg);
-  }
-`;
-
 export const AuthCanvas = styled.main`
   min-height: 100dvh;
   display: grid;
   place-items: center;
-  padding: 16px;
+  padding: 0;
   overflow: hidden;
-  background: #fdfbff;
+  background: url("/login-background.png") center / cover no-repeat;
 `;
 
 export const AuthContainer = styled.section`
-  width: min(1340px, calc(100vw - 32px));
-  min-height: calc(100dvh - 32px);
-  border-radius: 18px;
-  border: 1px solid #dfd0e8;
-  background: linear-gradient(
-    160deg,
-    rgb(255 255 255 / 0.84),
-    rgb(247 239 251 / 0.8)
-  );
-  box-shadow: 0 20px 48px rgb(88 45 103 / 0.1);
+  width: 100%;
+  min-height: 100dvh;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
   position: relative;
   display: grid;
   place-items: center;
-  overflow: hidden;
-
-  @media (max-width: 920px) {
-    min-height: calc(100dvh - 20px);
-    width: min(100%, calc(100vw - 12px));
-    border-radius: 14px;
-  }
+  overflow: visible;
 `;
 
 export const LeftArtwork = styled.div`
@@ -58,68 +38,17 @@ export const LeftArtwork = styled.div`
   inset: 0;
   isolation: isolate;
   overflow: hidden;
-  background:
-    radial-gradient(
-      circle at 30% 18%,
-      rgb(203 165 222 / 0.16),
-      transparent 42%
-    ),
-    linear-gradient(140deg, rgb(255 255 255 / 0.82), rgb(248 238 252 / 0.92));
+  background: transparent;
   pointer-events: none;
 
   &::before,
   &::after {
-    content: "";
-    position: absolute;
-    left: 25%;
-    width: 320px;
-    height: 90px;
-    border-radius: 99px;
-    filter: blur(0.4px);
-    opacity: 0.6;
-    background: linear-gradient(
-      90deg,
-      rgb(200 154 221 / 0.02),
-      rgb(177 112 209 / 0.34)
-    );
-    animation: ${brushFloat} 9s ease-in-out infinite;
-    transform: rotate(-10deg);
-  }
-
-  &::before {
-    top: 34%;
-    box-shadow:
-      0 -44px 0 -12px rgb(190 136 216 / 0.26),
-      0 44px 0 -10px rgb(196 146 220 / 0.2);
-  }
-
-  &::after {
-    top: 47%;
-    left: 30%;
-    width: 250px;
-    opacity: 0.5;
-    animation-delay: 0.6s;
-  }
-
-  @media (max-width: 920px) {
-    &::before,
-    &::after {
-      left: 50%;
-      transform: translateX(-50%) rotate(-10deg);
-    }
+    content: none;
   }
 `;
 
 export const PanelGlow = styled.div`
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(
-      circle at 56% 62%,
-      rgb(202 170 225 / 0.28),
-      transparent 40%
-    ),
-    radial-gradient(circle at 40% 43%, rgb(167 103 199 / 0.2), transparent 34%);
+  display: none;
 `;
 
 export const AuthCard = styled.article`
@@ -128,6 +57,7 @@ export const AuthCard = styled.article`
   align-self: center;
   justify-self: center;
   width: min(100%, 420px);
+  min-height: 460px;
   margin: 32px 18px;
   border: 1px solid #eadff0;
   border-radius: 22px;
@@ -151,6 +81,7 @@ export const AuthCard = styled.article`
   @media (max-width: 920px) {
     margin: 18px 14px;
     width: min(100%, 420px);
+    min-height: 330px;
     max-height: none;
     padding: 24px 22px 20px;
     justify-self: center;
